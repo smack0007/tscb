@@ -1,6 +1,6 @@
 {
   "name": "tscb",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "CLI that adds batteries to the TypeScript compiler.",
   "repository": "https://github.com/smack0007/tscb.git",
   "author": "smack0007 <zachary.snow@gmail.com>",
