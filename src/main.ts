@@ -14,6 +14,16 @@ function main(args: string[]) {
     }
 }
 
+export function parseArgs(args: string[]): { [key: string]: string } {
+    const result: { [key: string]: string } = {};
+
+    for (const arg of args) {
+        result[arg] = "";
+    }
+
+    return result;
+}
+
 async function build(args: string[]) {
     const fileName = args[0];
     const fileNameParts = path.parse(fileName);
