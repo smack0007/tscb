@@ -13,39 +13,96 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.parseArgs = void 0;
+exports.parseCommandArgs = void 0;
 const path_1 = __importDefault(require("path"));
 const process_1 = __importDefault(require("process"));
 const rollup_1 = require("rollup");
 const typescript_1 = __importDefault(require("typescript"));
 main(process_1.default.argv.slice(2));
+//.then(x => process.exit(x));
 function main(args) {
-    switch (args[0]) {
-        case "build":
-            build(args.slice(1));
-            break;
-    }
+    return __awaiter(this, void 0, void 0, function* () {
+        switch (args[0]) {
+            case "build":
+                return yield build(args.slice(1));
+            // default:
+            //     console.error("Unknown command.");
+        }
+        return 0;
+    });
 }
-function parseArgs(args) {
-    const result = {};
+;
+function parseCommandArgs(args, options) {
+    if (options === undefined) {
+        options = [];
+    }
+    const result = { "-": [] };
+    let nextArgValueFor = undefined;
     for (const arg of args) {
-        result[arg] = "";
+        if (arg.startsWith("--") || arg.startsWith("-")) {
+            let option = undefined;
+            if (arg.startsWith("--")) {
+                option = options.find(x => x.name === arg.substring("--".length));
+            }
+            else {
+                option = options.find(x => x.alias === arg.substring("-".length));
+            }
+            if (option === undefined) {
+                throw new Error(`Unknown option ${arg}`);
+            }
+            switch (option.type) {
+                case "boolean":
+                    result[option.name] = true;
+                    break;
+                case "string":
+                    result[option.name] = "";
+                    nextArgValueFor = option.name;
+                    break;
+            }
+        }
+        else {
+            if (nextArgValueFor !== undefined) {
+                result[nextArgValueFor] = arg;
+                nextArgValueFor = undefined;
+            }
+            else {
+                result["-"].push(arg);
+            }
+        }
+    }
+    for (const option of options) {
+        if (option.default !== undefined && result[option.name] === undefined) {
+            result[option.name] = option.default;
+        }
     }
     return result;
 }
-exports.parseArgs = parseArgs;
+exports.parseCommandArgs = parseCommandArgs;
 function build(args) {
     return __awaiter(this, void 0, void 0, function* () {
-        const fileName = args[0];
+        const commandArgs = parseCommandArgs(args, [
+            { name: "output", alias: "o", type: "string" }
+        ]);
+        const fileName = commandArgs["-"][0];
+        if (fileName === undefined) {
+            console.error("Please provide a file to compile.");
+            return 1;
+        }
         const fileNameParts = path_1.default.parse(fileName);
-        const outputFileName = fileNameParts.dir + fileNameParts.name + ".js";
+        let outputFileName = commandArgs["output"];
+        if (outputFileName === undefined) {
+            outputFileName = fileNameParts.dir + fileNameParts.name + ".js";
+        }
         console.info(`${fileName} => ${outputFileName}`);
-        tsc(fileName, {
+        const tscResult = tsc(fileName, {
             noEmitOnError: true,
             noImplicitAny: true,
             target: typescript_1.default.ScriptTarget.ES2015,
             module: typescript_1.default.ModuleKind.ES2015,
         });
+        if (tscResult !== 0) {
+            return tscResult;
+        }
         const rollupFileName = fileNameParts.dir + fileNameParts.name + ".js";
         const bundle = yield rollup_1.rollup({
             input: rollupFileName
@@ -55,6 +112,7 @@ function build(args) {
             format: "iife",
             sourcemap: true
         });
+        return 0;
     });
 }
 function tsc(fileName, options) {
