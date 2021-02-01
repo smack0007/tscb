@@ -1,7 +1,8 @@
 #!/usr/bin/env node
+import { readFileSync } from "fs";
 import path from "path";
 import process from "process";
-import { rollup } from "rollup";
+// import { rollup } from "rollup";
 import ts from "typescript";
 
 main(process.argv.slice(2));
@@ -117,38 +118,46 @@ async function build(args: string[]): Promise<number> {
         return tscResult;
     }
 
-    const rollupFileName = fileNameParts.dir + fileNameParts.name + ".js";
+    // const rollupFileName = fileNameParts.dir + fileNameParts.name + ".js";
 
-    const bundle = await rollup({
-        input: rollupFileName
-    });
+    // const bundle = await rollup({
+    //     input: rollupFileName
+    // });
 
-    await bundle.write({
-        file: outputFileName,
-        format: "iife",
-        sourcemap: true
-    });
+    // await bundle.write({
+    //     file: outputFileName,
+    //     format: "iife",
+    //     sourcemap: true
+    // });
 
     return 0;
 }
 
 function tsc(fileName: string, options: ts.CompilerOptions): number {
-    let program = ts.createProgram([ fileName ], options);
-    let emitResult = program.emit();
+    const source = readFileSync(fileName, { encoding: "utf8" });
+
+    const result = ts.transpileModule(source, { compilerOptions: options });
+
+    console.info(result);
+    
+    return 0;
+
+    // let program = ts.createProgram([ fileName ], options);
+    // let emitResult = program.emit();
   
-    let allDiagnostics = ts
-      .getPreEmitDiagnostics(program)
-      .concat(emitResult.diagnostics);
+    // let allDiagnostics = ts
+    //   .getPreEmitDiagnostics(program)
+    //   .concat(emitResult.diagnostics);
   
-    allDiagnostics.forEach(diagnostic => {
-      if (diagnostic.file) {
-        let { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
-        let message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
-        console.info(`${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
-      } else {
-        console.info(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"));
-      }
-    });
+    // allDiagnostics.forEach(diagnostic => {
+    //   if (diagnostic.file) {
+    //     let { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
+    //     let message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
+    //     console.info(`${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
+    //   } else {
+    //     console.info(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"));
+    //   }
+    // });
   
-    return emitResult.emitSkipped ? 1 : 0;
+    // return emitResult.emitSkipped ? 1 : 0;
 }
