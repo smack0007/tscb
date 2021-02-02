@@ -24,7 +24,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.app.json",
-    "start": "npm run build && node bin/main.js",
+    "start": "npm run build && node dist/main.js",
     "release": "npm run build && shx cp package.json ./bin && npm publish bin && git push --follow-tags",
     "release-patch": "npm version patch && npm run release",
     "release-minor": "npm version minor && npm run release",
